@@ -378,6 +378,42 @@
             width: 300px;
         }
         
+        /* Footer styles */
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .developer-info {
+            display: inline-block;
+            padding: 8px 15px;
+            background-color: #f8f8f8;
+            border-radius: 20px;
+            margin-top: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .developer-info:hover {
+            background-color: #e9e9e9;
+            transform: translateY(-2px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .developer-link {
+            color: var(--secondary-color);
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s;
+        }
+        
+        .developer-link:hover {
+            color: var(--primary-color);
+        }
+        
         /* Responsive styles */
         @media (max-width: 768px) {
             body {
@@ -462,6 +498,10 @@
             
             @page {
                 margin: 1.5cm;
+            }
+            
+            .footer {
+                margin-top: 30px;
             }
         }
     </style>
@@ -661,6 +701,15 @@
         <div id="quotationOutput" style="display: none;">
             <!-- Quotation will be generated here -->
         </div>
+        
+        <!-- Added Developer Footer -->
+        <div class="footer">
+            <p>Thank you for using the Nepali Bulk Quotation Generator</p>
+            <div class="developer-info">
+                <span>Designed and Developed by </span>
+                <a href="https://msr-portfolio.vercel.app/" class="developer-link" target="_blank" rel="noopener noreferrer">MSR</a>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -819,7 +868,7 @@
                 if (!validityPeriod || validityPeriod <= 0) {
                     document.getElementById('validityPeriodError').style.display = 'block';
                     isValid = false;
-                } else {
+                    } else {
                     document.getElementById('validityPeriodError').style.display = 'none';
                 }
                 
@@ -863,3 +912,230 @@
                         hasValidItems = true;
                     }
                 });
+                
+                return isValid && hasValidItems;
+            }
+            
+            // Generate quotation
+            document.getElementById('generateQuoteBtn').addEventListener('click', function() {
+                if (!validateForm()) {
+                    alert('Please fill in all required fields correctly.');
+                    return;
+                }
+                
+                // Show loading indicator
+                document.getElementById('loadingIndicator').style.display = 'block';
+                
+                // Simulate processing time (for better UX)
+                setTimeout(function() {
+                    generateQuotation();
+                    document.getElementById('loadingIndicator').style.display = 'none';
+                    
+                    // Scroll to quotation output
+                    document.getElementById('quotationOutput').scrollIntoView({ behavior: 'smooth' });
+                }, 800);
+            });
+            
+            function generateQuotation() {
+                // Get all form values
+                const companyName = document.getElementById('companyName').value.trim();
+                const companyAddress = document.getElementById('companyAddress').value.trim();
+                const companyPhone = document.getElementById('companyPhone').value.trim();
+                const companyEmail = document.getElementById('companyEmail').value.trim();
+                const companyPAN = document.getElementById('companyPAN').value.trim();
+                
+                const clientName = document.getElementById('clientName').value.trim();
+                const clientAddress = document.getElementById('clientAddress').value.trim();
+                const clientPhone = document.getElementById('clientPhone').value.trim();
+                const clientEmail = document.getElementById('clientEmail').value.trim();
+                const clientPAN = document.getElementById('clientPAN').value.trim();
+                
+                const projectName = document.getElementById('projectName').value.trim();
+                const quoteDate = document.getElementById('quoteDate').value;
+                const validityPeriod = parseInt(document.getElementById('validityPeriod').value);
+                
+                // Format dates
+                const formattedQuoteDate = new Date(quoteDate).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+                
+                // Calculate validity date
+                const validityDate = new Date(quoteDate);
+                validityDate.setDate(validityDate.getDate() + validityPeriod);
+                const formattedValidityDate = validityDate.toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+                
+                // Get tax rate
+                const taxRate = parseFloat(document.getElementById('taxRate').value) || 0;
+                
+                // Get discount information
+                const discountType = document.getElementById('discountType').value;
+                const discountValue = parseFloat(document.getElementById('discountValue').value) || 0;
+                
+                // Get delivery information
+                const deliveryOption = document.getElementById('deliveryOption').value;
+                const deliveryFee = parseFloat(document.getElementById('deliveryFee').value) || 0;
+                
+                // Get payment terms
+                const paymentTermsSelect = document.getElementById('paymentTerms');
+                let paymentTerms = paymentTermsSelect.options[paymentTermsSelect.selectedIndex].text;
+                
+                if (paymentTermsSelect.value === 'custom') {
+                    paymentTerms = document.getElementById('customTerms').value.trim();
+                }
+                
+                // Get additional notes
+                const additionalNotes = document.getElementById('additionalNotes').value.trim();
+                
+                // Process items
+                const itemRows = document.querySelectorAll('.item-row');
+                let itemsHtml = '';
+                let subtotal = 0;
+                
+                itemRows.forEach((row, index) => {
+                    const description = row.querySelector('.item-desc-input').value.trim();
+                    const quantity = parseFloat(row.querySelector('.item-qty').value) || 0;
+                    const unit = row.querySelector('.item-unit').value;
+                    const unitPrice = parseFloat(row.querySelector('.item-price').value) || 0;
+                    const amount = quantity * unitPrice;
+                    
+                    subtotal += amount;
+                    
+                    itemsHtml += `
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td>${description}</td>
+                            <td>${quantity}</td>
+                            <td>${unit}</td>
+                            <td class="currency-symbol">रू ${formatNepaliCurrency(unitPrice)}</td>
+                            <td class="currency-symbol">रू ${formatNepaliCurrency(amount)}</td>
+                        </tr>
+                    `;
+                });
+                
+                // Calculate totals
+                let discount = 0;
+                if (discountType === 'percentage') {
+                    discount = subtotal * (discountValue / 100);
+                } else if (discountType === 'amount') {
+                    discount = discountValue;
+                }
+                
+                const subtotalAfterDiscount = subtotal - discount;
+                const taxAmount = subtotalAfterDiscount * (taxRate / 100);
+                const deliveryAmount = deliveryFee;
+                const grandTotal = subtotalAfterDiscount + taxAmount + deliveryAmount;
+                
+                // Generate quotation HTML
+                const quotationHtml = `
+                    <div class="quotation-header">
+                        <h2 class="quotation-title">QUOTATION</h2>
+                        ${projectName ? `<p>${projectName}</p>` : ''}
+                    </div>
+                    
+                    <div class="company-info">
+                        <div class="left">
+                            <strong>From:</strong><br>
+                            <h3>${companyName}</h3>
+                            ${companyAddress ? `${companyAddress}<br>` : ''}
+                            ${companyPhone ? `Phone: ${companyPhone}<br>` : ''}
+                            ${companyEmail ? `Email: ${companyEmail}<br>` : ''}
+                            ${companyPAN ? `PAN/VAT: ${companyPAN}` : ''}
+                        </div>
+                        
+                        <div class="right">
+                            <strong>To:</strong><br>
+                            <h3>${clientName}</h3>
+                            ${clientAddress ? `${clientAddress}<br>` : ''}
+                            ${clientPhone ? `Phone: ${clientPhone}<br>` : ''}
+                            ${clientEmail ? `Email: ${clientEmail}<br>` : ''}
+                            ${clientPAN ? `PAN/VAT: ${clientPAN}` : ''}
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <strong>Quotation Date:</strong> ${formattedQuoteDate}<br>
+                        <strong>Valid Until:</strong> ${formattedValidityDate}
+                    </div>
+                    
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>S.N.</th>
+                                <th>Description</th>
+                                <th>Qty</th>
+                                <th>Unit</th>
+                                <th>Unit Price</th>
+                                <th>Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${itemsHtml}
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="5" style="text-align: right;"><strong>Subtotal:</strong></td>
+                                <td class="currency-symbol">रू ${formatNepaliCurrency(subtotal)}</td>
+                            </tr>
+                            ${discount > 0 ? `
+                                <tr>
+                                    <td colspan="5" style="text-align: right;"><strong>Discount ${discountType === 'percentage' ? `(${discountValue}%)` : ''}:</strong></td>
+                                    <td class="currency-symbol">रू ${formatNepaliCurrency(discount)}</td>
+                                </tr>
+                            ` : ''}
+                            ${taxRate > 0 ? `
+                                <tr>
+                                    <td colspan="5" style="text-align: right;"><strong>VAT/Tax (${taxRate}%):</strong></td>
+                                    <td class="currency-symbol">रू ${formatNepaliCurrency(taxAmount)}</td>
+                                </tr>
+                            ` : ''}
+                            ${deliveryAmount > 0 ? `
+                                <tr>
+                                    <td colspan="5" style="text-align: right;"><strong>Delivery Fee:</strong></td>
+                                    <td class="currency-symbol">रू ${formatNepaliCurrency(deliveryAmount)}</td>
+                                </tr>
+                            ` : ''}
+                            <tr class="total-row">
+                                <td colspan="5" style="text-align: right;"><strong>GRAND TOTAL:</strong></td>
+                                <td class="currency-symbol">रू ${formatNepaliCurrency(grandTotal)}</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                    
+                    <div>
+                        <h3>Payment Terms</h3>
+                        <p>${paymentTerms}</p>
+                    </div>
+                    
+                    ${additionalNotes ? `
+                        <div class="notes-section">
+                            <h3>Additional Notes</h3>
+                            <p>${additionalNotes.replace(/\n/g, '<br>')}</p>
+                        </div>
+                    ` : ''}
+                    
+                    <div style="margin-top: 50px;">
+                        <div style="float: left; width: 45%; text-align: center; border-top: 1px solid #000;">
+                            <p>Authorized Signature</p>
+                        </div>
+                        <div style="float: right; width: 45%; text-align: center; border-top: 1px solid #000;">
+                            <p>Client Signature</p>
+                        </div>
+                        <div style="clear: both;"></div>
+                    </div>
+                    
+                    <button type="button" class="print-btn" onclick="window.print()">Print Quotation</button>
+                `;
+                
+                // Display the quotation
+                const quotationOutput = document.getElementById('quotationOutput');
+                quotationOutput.innerHTML = quotationHtml;
+                quotationOutput.style.display = 'block';
+            }
+        });
+    </script>
