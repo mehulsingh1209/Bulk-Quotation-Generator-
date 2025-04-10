@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bulk Quotation Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .items-container {
+            margin: 20px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+        }
+        .item-row {
+            display: flex;
+            margin-bottom: 10px;
+            gap: 10px;
+        }
+        .item-row input, .item-row select {
+            flex: 1;
+        }
+        .remove-btn {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .remove-btn:hover {
+            background-color: #c0392b;
+        }
+        .add-item-btn {
+            background-color: #2ecc71;
+            margin-bottom: 15px;
+        }
+        .add-item-btn:hover {
+            background-color: #27ae60;
+        }
+        #quotationOutput {
+            margin-top: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        th, td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .total-row {
+            font-weight: bold;
+        }
+        .print-btn {
+            background-color: #34495e;
+            float: right;
+            margin-top: 15px;
+        }
+        .print-btn:hover {
+            background-color: #2c3e50;
+        }
+        .company-section {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .company-section > div {
+            flex: 1;
+            padding: 0 10px;
+        }
+        @media print {
+            body {
+                background-color: white;
+                padding: 0;
+            }
+            .container {
+                box-shadow: none;
+                padding: 0;
+            }
+            button, .items-container, .form-section {
+                display: none;
+            }
+            #quotationOutput {
+                display: block !important;
+                border: none;
+                padding: 0;
+                background-color: white;
+            }
+            .print-btn {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Bulk Quotation Generator</h1>
+        
+        <div class="form-section">
+            <div class="company-section">
+                <div>
+                    <div class="form-group">
+                        <label for="companyName">Your Company Name:</label>
+                        <input type="text" id="companyName" placeholder="Enter your company name">
+                    </div>
+                    <div class="form-group">
+                        <label for="companyContact">Your Contact Info:</label>
+                        <input type="text" id="companyContact" placeholder="Phone, email, address">
+                    </div>
+                </div>
+                <div>
+                    <div class="form-group">
+                        <label for="clientName">Client Name:</label>
+                        <input type="text" id="clientName" placeholder="Enter client name">
+                    </div>
+                    <div class="form-group">
+                        <label for="clientContact">Client Contact Info:</label>
+                        <input type="text" id="clientContact" placeholder="Phone, email, address">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="projectName">Project Name/Reference:</label>
+                <input type="text" id="projectName" placeholder="Enter project name or reference number">
+            </div>
+            
+            <div class="form-group">
+                <label for="quoteDate">Quotation Date:</label>
+                <input type="date" id="quoteDate">
+            </div>
+            
+            <div class="form-group">
+                <label for="validityPeriod">Validity Period (days):</label>
+                <input type="number" id="validityPeriod" value="30" min="1">
+            </div>
+            
+            <div class="items-container">
+                <h3>Items</h3>
+                <button type="button" class="add-item-btn" id="addItemBtn">+ Add Item</button>
+                <div id="itemsList">
+                    <!-- Item rows will be added here -->
+                    <div class="item-row">
+                        <input type="text" placeholder="Item description" class="item-desc">
+                        <input type="number" placeholder="Quantity" class="item-qty" min="1" value="1">
+                        <input type="number" placeholder="Unit price" class="item-price" min="0" step="0.01">
+                        <select class="item-unit">
+                            <option value="units">Units</option>
+                            <option value="kg">Kilograms</option>
+                            <option value="tons">Tons</option>
+                            <option value="meters">Meters</option>
+                            <option value="sq.m">Square Meters</option>
+                            <option value="cu.m">Cubic Meters</option>
+                            <option value="hours">Hours</option>
+                            <option value="days">Days</option>
+                        </select>
+                        <button type="button" class="remove-btn">Remove</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="taxRate">Tax Rate (%):</label>
+                <input type="number" id="taxRate" value="13" min="0" max="100" step="0.1">
+            </div>
+            
+            <div class="form-group">
+                <label for="discountType">Discount Type:</label>
+                <select id="discountType">
+                    <option value="none">None</option>
+                    <option value="percentage">Percentage</option>
+                    <option value="amount">Fixed Amount</option>
+                </select>
+            </div>
+            
+            <div class="form-group" id="discountValueGroup" style="display:none;">
+                <label for="discountValue">Discount Value:</label>
+                <input type="number" id="discountValue" value="0" min="0" step="0.01">
+            </div>
+            
+            <div class="form-group">
+                <label for="deliveryOption">Delivery Option:</label>
+                <select id="deliveryOption">
+                    <option value="none">No Delivery (Self Collection)</option>
+                    <option value="standard">Standard Delivery</option>
+                    <option value="express">Express Delivery</option>
+                </select>
+            </div>
+            
+            <div class="form-group" id="deliveryFeeGroup" style="display:none;">
+                <label for="deliveryFee">Delivery Fee:</label>
+                <input type="number" id="deliveryFee" value="0" min="0" step="0.01">
+            </div>
+            
+            <div class="form-group">
+                <label for="paymentTerms">Payment Terms:</label>
+                <select id="paymentTerms">
+                    <option value="immediate">Immediate Payment</option>
+                    <option value="15days">15 Days</option>
+                    <option value="30days">30 Days</option>
+                    <option value="60days">60 Days</option>
+                    <option value="custom">Custom</option>
+                </select>
+            </div>
+            
+            <div class="form-group" id="customTermsGroup" style="display:none;">
+                <label for="customTerms">Custom Payment Terms:</label>
+                <input type="text" id="customTerms" placeholder="Enter custom payment terms">
+            </div>
+            
+            <div class="form-group">
+                <label for="additionalNotes">Additional Notes:</label>
+                <textarea id="additionalNotes" rows="3" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;"></textarea>
+            </div>
+            
+            <button type="button" id="generateQuoteBtn">Generate Quotation</button>
+        </div>
+        
+        <div id="quotationOutput" style="display: none;">
+            <!-- Quotation will be generated here -->
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set today's date as default
+            const today = new Date();
+            document.getElementById('quoteDate').valueAsDate = today;
+            
+            // Add item button
+            document.getElementById('addItemBtn').addEventListener('click', function() {
+                const itemRow = document.createElement('div');
+                itemRow.className = 'item-row';
+                itemRow.innerHTML = `
+                    <input type="text" placeholder="Item description" class="item-desc">
+                    <input type="number" placeholder="Quantity" class="item-qty" min="1" value="1">
+                    <input type="number" placeholder="Unit price" class="item-price" min="0" step="0.01">
+                    <select class="item-unit">
+                        <option value="units">Units</option>
+                        <option value="kg">Kilograms</option>
+                        <option value="tons">Tons</option>
+                        <option value="meters">Meters</option>
+                        <option value="sq.m">Square Meters</option>
+                        <option value="cu.m">Cubic Meters</option>
+                        <option value="hours">Hours</option>
+                        <option value="days">Days</option>
+                    </select>
+                    <button type="button" class="remove-btn">Remove</button>
+                `;
+                document.getElementById('itemsList').appendChild(itemRow);
+                
+                // Add event listener to the remove button
+                itemRow.querySelector('.remove-btn').addEventListener('click', function() {
+                    itemRow.remove();
+                });
+            });
+            
+            // Remove button event delegation
+            document.getElementById('itemsList').addEventListener('click', function(e) {
+                if (e.target.classList.contains('remove-btn')) {
+                    const row = e.target.closest('.item-row');
+                    row.remove();
+                }
+            });
+            
+            // Show/hide discount value field based on discount type
+            document.getElementById('discountType').addEventListener('change', function() {
+                const discountValueGroup = document.getElementById('discountValueGroup');
+                if (this.value === 'none') {
+                    discountValueGroup.style.display = 'none';
+                } else {
+                    discountValueGroup.style.display = 'block';
+                }
+            });
+            
+            // Show/hide delivery fee field based on delivery option
+            document.getElementById('deliveryOption').addEventListener('change', function() {
+                const deliveryFeeGroup = document.getElementById('deliveryFeeGroup');
+                if (this.value === 'none') {
+                    deliveryFeeGroup.style.display = 'none';
+                    document.getElementById('deliveryFee').value = '0';
+                } else {
+                    deliveryFeeGroup.style.display = 'block';
+                    // Set default delivery fees
+                    if (this.value === 'standard') {
+                        document.getElementById('deliveryFee').value = '500';
+                    } else if (this.value === 'express') {
+                        document.getElementById('deliveryFee').value = '1000';
+                    }
+                }
+            });
+            
+            // Show/hide custom terms field based on payment terms
+            document.getElementById('paymentTerms').addEventListener('change', function() {
+                const customTermsGroup = document.getElementById('customTermsGroup');
+                if (this.value === 'custom') {
+                    customTermsGroup.style.display = 'block';
+                } else {
+                    customTermsGroup.style.display = 'none';
+                }
+            });
+            
+            // Generate quotation
+            document.getElementById('generateQuoteBtn').addEventListener('click', function() {
+                // Get form values
+                const companyName = document.getElementById('companyName').value || 'Your Company';
+                const companyContact = document.getElementById('companyContact').value || 'Your Contact Info';
+                const clientName = document.getElementById('clientName').value || 'Client Name';
+                const clientContact = document.getElementById('clientContact').value || 'Client Contact Info';
+                const projectName = document.getElementById('projectName').value || 'Project Reference';
+                
+                const quoteDate = document.getElementById('quoteDate').value;
+                const formattedQuoteDate = new Date(quoteDate).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+                
+                const validityPeriod = document.getElementById('validityPeriod').value;
+                const validUntil = new Date(quoteDate);
+                validUntil.setDate(validUntil.getDate() + parseInt(validityPeriod));
+                const formattedValidUntil = validUntil.toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+                
+                const taxRate = parseFloat(document.getElementById('taxRate').value) || 0;
+                const discountType = document.getElementById('discountType').value;
+                const discountValue = parseFloat(document.getElementById('discountValue').value) || 0;
+                const deliveryOption = document.getElementById('deliveryOption').value;
+                const deliveryFee = parseFloat(document.getElementById('deliveryFee').value) || 0;
+                
+                const paymentTerms = document.getElementById('paymentTerms').value;
+                let paymentTermsText = '';
+                if (paymentTerms === 'custom') {
+                    paymentTermsText = document.getElementById('customTerms').value;
+                } else if (paymentTerms === 'immediate') {
+                    paymentTermsText = 'Immediate Payment Upon Receipt';
+                } else {
+                    paymentTermsText = `Payment Due Within ${paymentTerms.replace('days', ' Days')}`;
+                }
+                
+                const additionalNotes = document.getElementById('additionalNotes').value;
+                
+                // Get items
+                const items = [];
+                const itemRows = document.querySelectorAll('.item-row');
+                let subtotal = 0;
+                
+                itemRows.forEach((row) => {
+                    const description = row.querySelector('.item-desc').value;
+                    const quantity = parseFloat(row.querySelector('.item-qty').value) || 0;
+                    const unitPrice = parseFloat(row.querySelector('.item-price').value) || 0;
+                    const unit = row.querySelector('.item-unit').value;
+                    const total = quantity * unitPrice;
+                    
+                    if (description && quantity > 0 && unitPrice > 0) {
+                        items.push({
+                            description,
+                            quantity,
+                            unit,
+                            unitPrice,
+                            total
+                        });
+                        
+                        subtotal += total;
+                    }
+                });
+                
+                // Calculate discount
+                let discountAmount = 0;
+                if (discountType === 'percentage') {
+                    discountAmount = (subtotal * discountValue) / 100;
+                } else if (discountType === 'amount') {
+                    discountAmount = discountValue;
+                }
+                
+                // Calculate tax on the discounted amount
+                const taxableAmount = subtotal - discountAmount;
+                const taxAmount = (taxableAmount * taxRate) / 100;
+                
+                // Calculate total
+                const total = taxableAmount + taxAmount + deliveryFee;
+                
+                // Generate quote number
+                const quoteNumber = 'QT-' + Date.now().toString().substr(-6);
+                
+                // Create quotation HTML
+                let html = `
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <h2>QUOTATION</h2>
+                    </div>
+                    
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+                        <div>
+                            <strong>${companyName}</strong><br>
+                            ${companyContact}
+                        </div>
+                        <div style="text-align: right;">
+                            <strong>Quote #:</strong> ${quoteNumber}<br>
+                            <strong>Date:</strong> ${formattedQuoteDate}<br>
+                            <strong>Valid Until:</strong> ${formattedValidUntil}
+                        </div>
+                    </div>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <strong>To:</strong><br>
+                        ${clientName}<br>
+                        ${clientContact}
+                    </div>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <strong>Project Reference:</strong> ${projectName}
+                    </div>
+                    
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Description</th>
+                                <th>Quantity</th>
+                                <th>Unit</th>
+                                <th>Unit Price</th>
+                                <th>Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                // Add items to table
+                items.forEach((item) => {
+                    html += `
+                        <tr>
+                            <td>${item.description}</td>
+                            <td>${item.quantity}</td>
+                            <td>${item.unit}</td>
+                            <td>Rs. ${item.unitPrice.toFixed(2)}</td>
+                            <td>Rs. ${item.total.toFixed(2)}</td>
+                        </tr>
+                    `;
+                });
+                
+                // Add subtotal, discount, tax, delivery fee, and total
+                html += `
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="4" style="text-align: right;"><strong>Subtotal:</strong></td>
+                                <td>Rs. ${subtotal.toFixed(2)}</td>
+                            </tr>
+                `;
+                
+                if (discountAmount > 0) {
+                    const discountLabel = discountType === 'percentage' ? `Discount (${discountValue}%):` : 'Discount:';
+                    html += `
+                        <tr>
+                            <td colspan="4" style="text-align: right;"><strong>${discountLabel}</strong></td>
+                            <td>-Rs. ${discountAmount.toFixed(2)}</td>
+                        </tr>
+                    `;
+                }
+                
+                if (taxAmount > 0) {
+                    html += `
+                        <tr>
+                            <td colspan="4" style="text-align: right;"><strong>Tax (${taxRate}%):</strong></td>
+                            <td>Rs. ${taxAmount.toFixed(2)}</td>
+                        </tr>
+                    `;
+                }
+                
+                if (deliveryFee > 0) {
+                    const deliveryLabel = deliveryOption === 'standard' ? 'Standard Delivery:' : 'Express Delivery:';
+                    html += `
+                        <tr>
+                            <td colspan="4" style="text-align: right;"><strong>${deliveryLabel}</strong></td>
+                            <td>Rs. ${deliveryFee.toFixed(2)}</td>
+                        </tr>
+                    `;
+                }
+                
+                html += `
+                            <tr class="total-row">
+                                <td colspan="4" style="text-align: right;"><strong>TOTAL:</strong></td>
+                                <td><strong>Rs. ${total.toFixed(2)}</strong></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                `;
+                
+                // Add payment terms and additional notes
+                html += `
+                    <div style="margin-top: 20px;">
+                        <strong>Payment Terms:</strong> ${paymentTermsText}
+                    </div>
+                `;
+                
+                if (additionalNotes) {
+                    html += `
+                        <div style="margin-top: 20px;">
+                            <strong>Additional Notes:</strong><br>
+                            ${additionalNotes.replace(/\n/g, '<br>')}
+                        </div>
+                    `;
+                }
+                
+                // Add print button
+                html += `
+                    <button type="button" class="print-btn" onclick="window.print()">Print Quotation</button>
+                `;
+                
+                // Display quotation
+                const quotationOutput = document.getElementById('quotationOutput');
+                quotationOutput.innerHTML = html;
+                quotationOutput.style.display = 'block';
+                
+                // Scroll to quotation
+                quotationOutput.scrollIntoView({ behavior: 'smooth' });
+            });
+        });
+    </script>
+</body>
+</html>
